@@ -1,0 +1,148 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Private DMYmart user profile, coin balance, and wallet balance.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "Firebase Auth UID of the user." },
+        "displayName": { "type": "string", "description": "User display name." },
+        "email": { "type": "string", "description": "User email address." },
+        "coins": { "type": "integer", "description": "DMYmart loyalty coin balance." },
+        "walletBalance": { "type": "integer", "description": "DMYmartPay wallet balance in IDR." },
+        "lastCheckInDate": { "type": "string", "description": "YYYY-MM-DD of last daily coin check-in." },
+        "photoUrl": { "type": "string", "description": "Optional avatar URL." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Server timestamp on creation." },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Server timestamp on update." }
+      },
+      "required": ["userId", "displayName", "email", "coins", "walletBalance", "createdAt", "updatedAt"]
+    },
+    "Product": {
+      "title": "Product",
+      "description": "Minimarket product listing belonging to one or more categories.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "Product name." },
+        "description": { "type": "string", "description": "Product description." },
+        "categories": { "type": "array", "description": "List of 1 to 7 category names this product belongs to." },
+        "price": { "type": "integer", "description": "Current selling price in IDR." },
+        "originalPrice": { "type": "integer", "description": "Original price before discount in IDR." },
+        "stock": { "type": "integer", "description": "Available stock count." },
+        "soldCount": { "type": "integer", "description": "Total units sold." },
+        "rating": { "type": "number", "description": "Average rating from 0.0 to 5.0." },
+        "unit": { "type": "string", "description": "Package unit or variant label." },
+        "imageKey": { "type": "string", "description": "Visual asset key for rendering product artwork." },
+        "sellerId": { "type": "string", "description": "UID of the seller who listed the product." },
+        "sellerName": { "type": "string", "description": "Store or seller display name." },
+        "isFlashSale": { "type": "boolean", "description": "Whether featured in Flash Sale." },
+        "isOfficialStore": { "type": "boolean", "description": "Whether sold by DMYmart Official Store." },
+        "isPublished": { "type": "boolean", "description": "Whether visible in public marketplace." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Server timestamp on creation." },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Server timestamp on update." }
+      },
+      "required": ["name", "description", "categories", "price", "originalPrice", "stock", "soldCount", "rating", "unit", "imageKey", "sellerId", "sellerName", "isFlashSale", "isOfficialStore", "isPublished", "createdAt", "updatedAt"]
+    },
+    "CartItem": {
+      "title": "CartItem",
+      "description": "Persisted item in a user's shopping cart.",
+      "type": "object",
+      "properties": {
+        "productId": { "type": "string", "description": "Referenced product document ID." },
+        "productName": { "type": "string", "description": "Snapshot of product name." },
+        "productImageKey": { "type": "string", "description": "Snapshot of product image key." },
+        "categories": { "type": "array", "description": "Product categories." },
+        "unit": { "type": "string", "description": "Unit or variant." },
+        "sellerId": { "type": "string", "description": "Seller UID." },
+        "sellerName": { "type": "string", "description": "Seller store name." },
+        "price": { "type": "integer", "description": "Unit price in IDR." },
+        "originalPrice": { "type": "integer", "description": "Original unit price in IDR." },
+        "quantity": { "type": "integer", "description": "Quantity in cart (1..999)." },
+        "stock": { "type": "integer", "description": "Available stock." },
+        "isSelected": { "type": "boolean", "description": "Whether checked for checkout." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Server timestamp on creation." },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Server timestamp on update." }
+      },
+      "required": ["productId", "productName", "productImageKey", "categories", "unit", "sellerId", "sellerName", "price", "originalPrice", "quantity", "stock", "isSelected", "createdAt", "updatedAt"]
+    },
+    "Order": {
+      "title": "Order",
+      "description": "User checkout order with line items and fulfillment status.",
+      "type": "object",
+      "properties": {
+        "orderNumber": { "type": "string", "description": "Human-readable order code." },
+        "status": { "type": "string", "enum": ["BELUM_BAYAR", "DIKEMAS", "DIKIRIM", "SELESAI", "DIBATALKAN"], "description": "Order fulfillment status." },
+        "items": { "type": "array", "description": "Purchased item maps." },
+        "itemSummary": { "type": "string", "description": "Summary string of purchased items." },
+        "shippingAddress": { "type": "string", "description": "Full delivery address." },
+        "recipientName": { "type": "string", "description": "Recipient full name." },
+        "recipientPhone": { "type": "string", "description": "Recipient phone number." },
+        "shippingMethod": { "type": "string", "description": "Chosen delivery option." },
+        "shippingCost": { "type": "integer", "description": "Shipping fee in IDR." },
+        "voucherCode": { "type": "string", "description": "Applied promo voucher code." },
+        "discountAmount": { "type": "integer", "description": "Discount applied in IDR." },
+        "coinsUsed": { "type": "integer", "description": "DMYmart coins redeemed." },
+        "subtotal": { "type": "integer", "description": "Products subtotal in IDR." },
+        "totalAmount": { "type": "integer", "description": "Final total paid in IDR." },
+        "paymentMethod": { "type": "string", "description": "Payment method name." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Server timestamp on creation." },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Server timestamp on update." }
+      },
+      "required": ["orderNumber", "status", "items", "itemSummary", "shippingAddress", "recipientName", "recipientPhone", "shippingMethod", "shippingCost", "voucherCode", "discountAmount", "coinsUsed", "subtotal", "totalAmount", "paymentMethod", "createdAt", "updatedAt"]
+    },
+    "ShippingAddress": {
+      "title": "ShippingAddress",
+      "description": "User delivery address book entry.",
+      "type": "object",
+      "properties": {
+        "label": { "type": "string", "description": "Address label such as Rumah or Kantor." },
+        "recipientName": { "type": "string", "description": "Recipient name." },
+        "phone": { "type": "string", "description": "Phone number." },
+        "fullAddress": { "type": "string", "description": "Street, district, city, postal code." },
+        "notes": { "type": "string", "description": "Delivery notes." },
+        "isDefault": { "type": "boolean", "description": "Whether primary address." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Server timestamp on creation." },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Server timestamp on update." }
+      },
+      "required": ["label", "recipientName", "phone", "fullAddress", "notes", "isDefault", "createdAt", "updatedAt"]
+    },
+    "FavoriteItem": {
+      "title": "FavoriteItem",
+      "description": "User wishlisted product.",
+      "type": "object",
+      "properties": {
+        "productId": { "type": "string", "description": "Product ID." },
+        "productName": { "type": "string", "description": "Product name." },
+        "price": { "type": "integer", "description": "Product price." },
+        "imageKey": { "type": "string", "description": "Product image key." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Server timestamp on creation." }
+      },
+      "required": ["productId", "productName", "price", "imageKey", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "Private user profile, coins, and wallet balance."
+    },
+    "/users/{userId}/cart/{cartItemId}": {
+      "schema": { "$ref": "#/entities/CartItem" },
+      "description": "User persistent shopping cart items."
+    },
+    "/users/{userId}/orders/{orderId}": {
+      "schema": { "$ref": "#/entities/Order" },
+      "description": "User order history and fulfillment tracking."
+    },
+    "/users/{userId}/addresses/{addressId}": {
+      "schema": { "$ref": "#/entities/ShippingAddress" },
+      "description": "User saved delivery addresses."
+    },
+    "/users/{userId}/favorites/{productId}": {
+      "schema": { "$ref": "#/entities/FavoriteItem" },
+      "description": "User favorite products wishlist."
+    },
+    "/products/{productId}": {
+      "schema": { "$ref": "#/entities/Product" },
+      "description": "Shared minimarket marketplace catalog with multi-category support."
+    }
+  }
+}

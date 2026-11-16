@@ -1,0 +1,6 @@
+{
+  "name": "DMYmart",
+  "description": "Aplikasi jual beli minimarket DMYmart dengan fitur lengkap seperti flash sale, voucher diskon, keranjang belanja, checkout, lacak pesanan, dan kelola produk toko.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

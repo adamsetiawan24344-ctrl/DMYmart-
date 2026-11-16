@@ -1,0 +1,269 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 1. Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // 2. Hardened Primitives
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidTimestamp(ts) {
+      return ts is timestamp && ts <= request.time;
+    }
+
+    // 3. Entity Validators
+    function isValidUserProfile(data, userId) {
+      return data.userId is string && data.userId == userId &&
+             data.displayName is string && data.displayName.size() >= 1 && data.displayName.size() <= 100 &&
+             data.email is string && data.email.size() <= 150 &&
+             data.coins is int && data.coins >= 0 && data.coins <= 10000000 &&
+             data.walletBalance is int && data.walletBalance >= 0 && data.walletBalance <= 1000000000 &&
+             (!('lastCheckInDate' in data) || data.lastCheckInDate == null || (data.lastCheckInDate is string && data.lastCheckInDate.size() <= 20)) &&
+             (!('photoUrl' in data) || data.photoUrl == null || (data.photoUrl is string && data.photoUrl.size() <= 500));
+    }
+
+    function isValidCartItem(data) {
+      return data.productId is string && isValidId(data.productId) &&
+             data.productName is string && data.productName.size() >= 1 && data.productName.size() <= 200 &&
+             data.productImageKey is string && data.productImageKey.size() >= 1 && data.productImageKey.size() <= 100 &&
+             data.categories is list && data.categories.size() >= 1 && data.categories.size() <= 7 && data.categories[0] is string &&
+             data.unit is string && data.unit.size() >= 1 && data.unit.size() <= 60 &&
+             data.sellerId is string && data.sellerId.size() >= 1 && data.sellerId.size() <= 128 &&
+             data.sellerName is string && data.sellerName.size() >= 1 && data.sellerName.size() <= 100 &&
+             data.price is int && data.price >= 0 && data.price <= 100000000 &&
+             data.originalPrice is int && data.originalPrice >= 0 && data.originalPrice <= 100000000 &&
+             data.quantity is int && data.quantity >= 1 && data.quantity <= 999 &&
+             data.stock is int && data.stock >= 0 && data.stock <= 100000 &&
+             data.isSelected is bool;
+    }
+
+    function isValidOrder(data) {
+      return data.orderNumber is string && data.orderNumber.size() >= 3 && data.orderNumber.size() <= 64 &&
+             data.status in ['BELUM_BAYAR', 'DIKEMAS', 'DIKIRIM', 'SELESAI', 'DIBATALKAN'] &&
+             data.items is list && data.items.size() >= 1 && data.items.size() <= 50 && data.items[0] is map &&
+             data.itemSummary is string && data.itemSummary.size() >= 1 && data.itemSummary.size() <= 300 &&
+             data.shippingAddress is string && data.shippingAddress.size() >= 5 && data.shippingAddress.size() <= 400 &&
+             data.recipientName is string && data.recipientName.size() >= 1 && data.recipientName.size() <= 120 &&
+             data.recipientPhone is string && data.recipientPhone.size() >= 5 && data.recipientPhone.size() <= 40 &&
+             data.shippingMethod is string && data.shippingMethod.size() >= 1 && data.shippingMethod.size() <= 80 &&
+             data.shippingCost is int && data.shippingCost >= 0 && data.shippingCost <= 1000000 &&
+             data.voucherCode is string && data.voucherCode.size() <= 40 &&
+             data.discountAmount is int && data.discountAmount >= 0 && data.discountAmount <= 10000000 &&
+             data.coinsUsed is int && data.coinsUsed >= 0 && data.coinsUsed <= 10000000 &&
+             data.subtotal is int && data.subtotal >= 0 && data.subtotal <= 1000000000 &&
+             data.totalAmount is int && data.totalAmount >= 0 && data.totalAmount <= 1000000000 &&
+             data.paymentMethod is string && data.paymentMethod.size() >= 1 && data.paymentMethod.size() <= 60;
+    }
+
+    function isValidAddress(data) {
+      return data.label is string && data.label.size() >= 1 && data.label.size() <= 50 &&
+             data.recipientName is string && data.recipientName.size() >= 1 && data.recipientName.size() <= 120 &&
+             data.phone is string && data.phone.size() >= 5 && data.phone.size() <= 40 &&
+             data.fullAddress is string && data.fullAddress.size() >= 5 && data.fullAddress.size() <= 400 &&
+             data.notes is string && data.notes.size() <= 200 &&
+             data.isDefault is bool;
+    }
+
+    function isValidFavorite(data) {
+      return data.productId is string && isValidId(data.productId) &&
+             data.productName is string && data.productName.size() >= 1 && data.productName.size() <= 200 &&
+             data.price is int && data.price >= 0 && data.price <= 100000000 &&
+             data.imageKey is string && data.imageKey.size() >= 1 && data.imageKey.size() <= 100;
+    }
+
+    function isValidProduct(data) {
+      return data.name is string && data.name.size() >= 2 && data.name.size() <= 120 &&
+             data.description is string && data.description.size() <= 1000 &&
+             data.categories is list && data.categories.size() >= 1 && data.categories.size() <= 7 && data.categories[0] is string &&
+             data.price is int && data.price >= 100 && data.price <= 100000000 &&
+             data.originalPrice is int && data.originalPrice >= 100 && data.originalPrice <= 100000000 &&
+             data.stock is int && data.stock >= 0 && data.stock <= 100000 &&
+             data.soldCount is int && data.soldCount >= 0 && data.soldCount <= 10000000 &&
+             data.rating is number && data.rating >= 0.0 && data.rating <= 5.0 &&
+             data.unit is string && data.unit.size() >= 1 && data.unit.size() <= 50 &&
+             data.imageKey is string && data.imageKey.size() >= 1 && data.imageKey.size() <= 100 &&
+             data.sellerId is string && data.sellerId.size() >= 1 && data.sellerId.size() <= 128 &&
+             data.sellerName is string && data.sellerName.size() >= 1 && data.sellerName.size() <= 80 &&
+             data.isFlashSale is bool &&
+             data.isOfficialStore is bool &&
+             data.isPublished is bool;
+    }
+
+    // 4. User Profile & Private Subcollections
+    match /users/{userId} {
+      allow get, list: if isSignedIn() && request.auth.uid == userId;
+
+      allow create: if isSignedIn() &&
+                       isValidId(userId) &&
+                       request.auth.uid == userId &&
+                       incoming().keys().hasAll(['userId', 'displayName', 'email', 'coins', 'walletBalance', 'createdAt', 'updatedAt']) &&
+                       incoming().keys().hasOnly(['userId', 'displayName', 'email', 'coins', 'walletBalance', 'lastCheckInDate', 'photoUrl', 'createdAt', 'updatedAt']) &&
+                       isValidTimestamp(incoming().createdAt) &&
+                       isValidTimestamp(incoming().updatedAt) &&
+                       isValidUserProfile(incoming(), userId);
+
+      allow update: if isSignedIn() &&
+                       isValidId(userId) &&
+                       request.auth.uid == userId &&
+                       isValidUserProfile(incoming(), userId) &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt &&
+                       isValidTimestamp(incoming().updatedAt) &&
+                       (
+                         incoming().diff(existing()).affectedKeys().hasOnly(['coins', 'lastCheckInDate', 'updatedAt']) ||
+                         incoming().diff(existing()).affectedKeys().hasOnly(['walletBalance', 'coins', 'updatedAt']) ||
+                         incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'photoUrl', 'updatedAt'])
+                       );
+
+      allow delete: if isSignedIn() && isValidId(userId) && request.auth.uid == userId;
+
+      match /cart/{cartItemId} {
+        allow get: if isSignedIn() && isValidId(cartItemId) && request.auth.uid == userId;
+        allow list: if isSignedIn() && request.auth.uid == userId;
+
+        allow create: if isSignedIn() &&
+                         isValidId(cartItemId) &&
+                         request.auth.uid == userId &&
+                         incoming().keys().hasAll(['productId', 'productName', 'productImageKey', 'categories', 'unit', 'sellerId', 'sellerName', 'price', 'originalPrice', 'quantity', 'stock', 'isSelected', 'createdAt', 'updatedAt']) &&
+                         incoming().keys().hasOnly(['productId', 'productName', 'productImageKey', 'categories', 'unit', 'sellerId', 'sellerName', 'price', 'originalPrice', 'quantity', 'stock', 'isSelected', 'createdAt', 'updatedAt']) &&
+                         isValidTimestamp(incoming().createdAt) &&
+                         isValidTimestamp(incoming().updatedAt) &&
+                         isValidCartItem(incoming());
+
+        allow update: if isSignedIn() &&
+                         isValidId(cartItemId) &&
+                         request.auth.uid == userId &&
+                         isValidCartItem(incoming()) &&
+                         incoming().productId == existing().productId &&
+                         incoming().createdAt == existing().createdAt &&
+                         isValidTimestamp(incoming().updatedAt) &&
+                         (
+                           incoming().diff(existing()).affectedKeys().hasOnly(['quantity', 'updatedAt']) ||
+                           incoming().diff(existing()).affectedKeys().hasOnly(['isSelected', 'updatedAt']) ||
+                           incoming().diff(existing()).affectedKeys().hasOnly(['quantity', 'isSelected', 'price', 'originalPrice', 'stock', 'updatedAt'])
+                         );
+
+        allow delete: if isSignedIn() && isValidId(cartItemId) && request.auth.uid == userId;
+      }
+
+      match /orders/{orderId} {
+        allow get: if isSignedIn() && isValidId(orderId) && request.auth.uid == userId;
+        allow list: if isSignedIn() && request.auth.uid == userId;
+
+        allow create: if isSignedIn() &&
+                         isValidId(orderId) &&
+                         request.auth.uid == userId &&
+                         incoming().keys().hasAll(['orderNumber', 'status', 'items', 'itemSummary', 'shippingAddress', 'recipientName', 'recipientPhone', 'shippingMethod', 'shippingCost', 'voucherCode', 'discountAmount', 'coinsUsed', 'subtotal', 'totalAmount', 'paymentMethod', 'createdAt', 'updatedAt']) &&
+                         incoming().keys().hasOnly(['orderNumber', 'status', 'items', 'itemSummary', 'shippingAddress', 'recipientName', 'recipientPhone', 'shippingMethod', 'shippingCost', 'voucherCode', 'discountAmount', 'coinsUsed', 'subtotal', 'totalAmount', 'paymentMethod', 'createdAt', 'updatedAt']) &&
+                         incoming().status in ['BELUM_BAYAR', 'DIKEMAS'] &&
+                         isValidTimestamp(incoming().createdAt) &&
+                         isValidTimestamp(incoming().updatedAt) &&
+                         isValidOrder(incoming());
+
+        allow update: if isSignedIn() &&
+                         isValidId(orderId) &&
+                         request.auth.uid == userId &&
+                         isValidOrder(incoming()) &&
+                         !(existing().status in ['SELESAI', 'DIBATALKAN']) &&
+                         incoming().createdAt == existing().createdAt &&
+                         incoming().orderNumber == existing().orderNumber &&
+                         isValidTimestamp(incoming().updatedAt) &&
+                         incoming().diff(existing()).affectedKeys().hasOnly(['status', 'updatedAt']);
+
+        allow delete: if false;
+      }
+
+      match /addresses/{addressId} {
+        allow get: if isSignedIn() && isValidId(addressId) && request.auth.uid == userId;
+        allow list: if isSignedIn() && request.auth.uid == userId;
+
+        allow create: if isSignedIn() &&
+                         isValidId(addressId) &&
+                         request.auth.uid == userId &&
+                         incoming().keys().hasAll(['label', 'recipientName', 'phone', 'fullAddress', 'notes', 'isDefault', 'createdAt', 'updatedAt']) &&
+                         incoming().keys().hasOnly(['label', 'recipientName', 'phone', 'fullAddress', 'notes', 'isDefault', 'createdAt', 'updatedAt']) &&
+                         isValidTimestamp(incoming().createdAt) &&
+                         isValidTimestamp(incoming().updatedAt) &&
+                         isValidAddress(incoming());
+
+        allow update: if isSignedIn() &&
+                         isValidId(addressId) &&
+                         request.auth.uid == userId &&
+                         isValidAddress(incoming()) &&
+                         incoming().createdAt == existing().createdAt &&
+                         isValidTimestamp(incoming().updatedAt) &&
+                         (
+                           incoming().diff(existing()).affectedKeys().hasOnly(['isDefault', 'updatedAt']) ||
+                           incoming().diff(existing()).affectedKeys().hasOnly(['label', 'recipientName', 'phone', 'fullAddress', 'notes', 'isDefault', 'updatedAt'])
+                         );
+
+        allow delete: if isSignedIn() && isValidId(addressId) && request.auth.uid == userId;
+      }
+
+      match /favorites/{productId} {
+        allow get: if isSignedIn() && isValidId(productId) && request.auth.uid == userId;
+        allow list: if isSignedIn() && request.auth.uid == userId;
+
+        allow create: if isSignedIn() &&
+                         isValidId(productId) &&
+                         request.auth.uid == userId &&
+                         incoming().keys().hasAll(['productId', 'productName', 'price', 'imageKey', 'createdAt']) &&
+                         incoming().keys().hasOnly(['productId', 'productName', 'price', 'imageKey', 'createdAt']) &&
+                         isValidTimestamp(incoming().createdAt) &&
+                         isValidFavorite(incoming());
+
+        allow update: if false;
+        allow delete: if isSignedIn() && isValidId(productId) && request.auth.uid == userId;
+      }
+    }
+
+    // 5. Shared Marketplace Catalog
+    match /products/{productId} {
+      allow get: if isSignedIn() &&
+                    isValidId(productId) &&
+                    (existing().isPublished == true || existing().sellerId == request.auth.uid);
+
+      allow list: if isSignedIn() &&
+                     (existing().isPublished == true || existing().sellerId == request.auth.uid);
+
+      allow create: if isSignedIn() &&
+                       isValidId(productId) &&
+                       incoming().sellerId == request.auth.uid &&
+                       incoming().keys().hasAll(['name', 'description', 'categories', 'price', 'originalPrice', 'stock', 'soldCount', 'rating', 'unit', 'imageKey', 'sellerId', 'sellerName', 'isFlashSale', 'isOfficialStore', 'isPublished', 'createdAt', 'updatedAt']) &&
+                       incoming().keys().hasOnly(['name', 'description', 'categories', 'price', 'originalPrice', 'stock', 'soldCount', 'rating', 'unit', 'imageKey', 'sellerId', 'sellerName', 'isFlashSale', 'isOfficialStore', 'isPublished', 'createdAt', 'updatedAt']) &&
+                       isValidTimestamp(incoming().createdAt) &&
+                       isValidTimestamp(incoming().updatedAt) &&
+                       isValidProduct(incoming());
+
+      allow update: if isSignedIn() &&
+                       isValidId(productId) &&
+                       existing().sellerId == request.auth.uid &&
+                       isValidProduct(incoming()) &&
+                       incoming().sellerId == existing().sellerId &&
+                       incoming().createdAt == existing().createdAt &&
+                       isValidTimestamp(incoming().updatedAt) &&
+                       (
+                         incoming().diff(existing()).affectedKeys().hasOnly(['name', 'description', 'categories', 'price', 'originalPrice', 'stock', 'unit', 'imageKey', 'isFlashSale', 'isPublished', 'updatedAt']) ||
+                         incoming().diff(existing()).affectedKeys().hasOnly(['stock', 'isPublished', 'updatedAt'])
+                       );
+
+      allow delete: if isSignedIn() && isValidId(productId) && existing().sellerId == request.auth.uid;
+    }
+  }
+}
